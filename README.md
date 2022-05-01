@@ -1,4 +1,4 @@
-# OpeniCELink
+# OpeniCELink [W.I.P, Please don't flash on your APM32 yet!]
 
 Open source firmware for iCELink. The FPGA Bitstream flasher on iCESugar nano FPGA dev board.
 
