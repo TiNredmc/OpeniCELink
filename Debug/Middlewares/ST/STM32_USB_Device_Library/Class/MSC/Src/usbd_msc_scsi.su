@@ -1,0 +1,2 @@
+../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_scsi.c:115:8:SCSI_ProcessCmd	40	static
+../Middlewares/ST/STM32_USB_Device_Library/Class/MSC/Src/usbd_msc_scsi.c:422:6:SCSI_SenseCode	0	static
