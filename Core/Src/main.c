@@ -60,8 +60,6 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
-
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -85,6 +83,10 @@ PUTCHAR_PROTOTYPE
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+/* Open source firmware for iCELink on iCESugar nano FPGA dev board
+ * Coded by TinLethax
+ * https://github.com/TiNredmc/OpeniCELink
+ */
 
 // Drive mkfs
 void ice_mkfs(){
