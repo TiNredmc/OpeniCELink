@@ -121,6 +121,9 @@ void ice_mkfs(){
 
 		HAL_FLASHEx_Erase(&EraseInitStruct, &PAGEError);
 
+		for(uint32_t n = FLASH_MEM_BASE_ADDR + 512; n < 0x08020000; n += 4)
+			HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, n, 0x00000000);
+
 		for(uint8_t i=0; i < 62; i+= 2){// Write Boot sector (BIOS Parameter Block) to the internal Flash.
 			HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,
 					FLASH_MEM_BASE_ADDR + i, (ms_fat12[i] | ms_fat12[i+1] << 8)); // flash modified data onto Flash memory.
@@ -128,10 +131,6 @@ void ice_mkfs(){
 
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, FLASH_MEM_BASE_ADDR + 510, 0xAA55);// Write the signature of FAT file system at the end of sector 0.
 
-		// Set Label name at the beginning of sector 3.
-		const uint8_t ice_label[12] = {'I', 'C', 'E', 'B', 'L', 'A', 'S', 'T', 'E', 'R', ' ', 0xFF};
-		for(uint8_t i =0; i < 12; i+= 2)
-			HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, FLASH_MEM_BASE_ADDR + 1024+512+i, (ice_label[i] | ice_label[i+1] << 8));
 }
 
 /* USER CODE END 0 */
@@ -175,8 +174,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
-  MX_USB_DEVICE_Init();
   MX_SPI1_Init();
+  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
 
   // Important source files worth taking a look at :
@@ -186,7 +185,6 @@ int main(void)
 
   /* On iCESugar nano board has USB bus gating controlled by PA15
    * Set PA15 to Logic HIGH */
-  HAL_GPIO_WritePin(USB_EN_GPIO_Port, USB_EN_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(STAT_LED_GPIO_Port, STAT_LED_Pin, GPIO_PIN_SET);
 
   printf("%c",0x0c);// clear UART terminal screen
@@ -199,12 +197,26 @@ int main(void)
 	  w25_writeMode(&w25q, 1);// NOR flash write enable.
   }
 
+  uint8_t readbuf[32];
+  w25_read(&w25q, 32200, readbuf, 32);
+
+  printf("Readback : ");
+  for(uint8_t n = 0; n < 32; n++){
+	  printf("0x%2x \n", readbuf[n]);
+  }
+
+  // De-initialize the SPI, we will use it later when we want to flash
+  HAL_SPI_DeInit(&hspi1);
+
   HAL_GPIO_WritePin(CRESET_pin_GPIO_Port, CRESET_pin_Pin, GPIO_PIN_SET);// Release reset pin, lets FPGA run.
 
   ice_mkfs();
+  HAL_Delay(50);
+  HAL_GPIO_WritePin(USB_EN_GPIO_Port, USB_EN_Pin, GPIO_PIN_SET);
   printf("INFO:FAT12 deployed!\n");
 
   printf("INFO:Starting...\n");
+
 
   /* USER CODE END 2 */
 
@@ -257,6 +269,10 @@ int main(void)
 	bitstream_size = ((uint8_t *)flash_scan - fdata) + 1;
 	printf("INFO:Bitstream size : %ld\n", bitstream_size);
 
+	// Re_init spi after last flashing?
+	MX_SPI1_Init();
+	HAL_Delay(100);
+
 	// Turn LED of to indicates that we're flashing the Bitstream.
 	HAL_GPIO_WritePin(STAT_LED_GPIO_Port, STAT_LED_Pin, GPIO_PIN_RESET);
 
@@ -267,18 +283,22 @@ int main(void)
 
 	w25_write(&w25q, (uint8_t *)fdata, bitstream_size);// Flash bit stream to SPI NOR flash.
 
+	// De-init the SPI.
+	HAL_SPI_DeInit(&hspi1);
+
 	// release reset to lets FPGA run.
 	HAL_GPIO_WritePin(CRESET_pin_GPIO_Port, CRESET_pin_Pin, GPIO_PIN_SET);
+
 	HAL_GPIO_WritePin(STAT_LED_GPIO_Port, STAT_LED_Pin, GPIO_PIN_SET);// Turn LED Back on after Bitstream was flashed.
 	printf("DONE:Bit stream is flashed into SPI NOR\n");
 
 	// Reformat the drive space.
 	ice_mkfs();
-	printf("INFO:Reformatted");
+	printf("INFO:Reformatted\n");
 	// Disconnect and reconnect USB.
-	HAL_GPIO_WritePin(USB_EN_GPIO_Port, USB_EN_Pin, GPIO_PIN_SET);
-	HAL_Delay(20);
 	HAL_GPIO_WritePin(USB_EN_GPIO_Port, USB_EN_Pin, GPIO_PIN_RESET);
+	HAL_Delay(100);
+	HAL_GPIO_WritePin(USB_EN_GPIO_Port, USB_EN_Pin, GPIO_PIN_SET);
 
   }// while
   /* USER CODE END 3 */
