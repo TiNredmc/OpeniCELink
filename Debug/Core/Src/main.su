@@ -1,5 +1,0 @@
-../Core/Src/main.c:75:1:__io_putchar	16	static
-../Core/Src/main.c:90:6:ice_mkfs	104	static
-../Core/Src/main.c:282:6:SystemClock_Config	96	static,ignoring_inline_asm
-../Core/Src/main.c:144:5:main	72	static,ignoring_inline_asm
-../Core/Src/main.c:469:6:Error_Handler	0	static,ignoring_inline_asm

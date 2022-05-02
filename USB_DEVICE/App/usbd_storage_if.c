@@ -77,8 +77,8 @@
 #undef STORAGE_BLK_NBR
 #undef STORAGE_BLK_SIZ
 #ifdef SMALL_FS
-#define STORAGE_BLK_NBR                  128//64
-#define STORAGE_BLK_SIZ                  0x200//0x400
+#define STORAGE_BLK_NBR                  128
+#define STORAGE_BLK_SIZ                  0x200
 #else
 #define STORAGE_BLK_NBR                  64
 #define STORAGE_BLK_SIZ                  0x400
