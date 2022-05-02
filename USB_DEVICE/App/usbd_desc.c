@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2021 STMicroelectronics.
+  * Copyright (c) 2022 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -65,8 +65,8 @@
 #define USBD_VID     1155
 #define USBD_LANGID_STRING     1033
 #define USBD_MANUFACTURER_STRING     "TinLethax"
-#define USBD_PID_FS     22314
-#define USBD_PRODUCT_STRING_FS     "iCEBlaster"
+#define USBD_PID_FS     6969
+#define USBD_PRODUCT_STRING_FS     "OpeniCELink"
 #define USBD_CONFIGURATION_STRING_FS     "MSC Config"
 #define USBD_INTERFACE_STRING_FS     "MSC Interface"
 

@@ -77,8 +77,8 @@
 #undef STORAGE_BLK_NBR
 #undef STORAGE_BLK_SIZ
 #ifdef SMALL_FS
-#define STORAGE_BLK_NBR                  128
-#define STORAGE_BLK_SIZ                  0x200
+#define STORAGE_BLK_NBR                  128//64
+#define STORAGE_BLK_SIZ                  0x200//0x400
 #else
 #define STORAGE_BLK_NBR                  64
 #define STORAGE_BLK_SIZ                  0x400
@@ -121,8 +121,8 @@ const int8_t STORAGE_Inquirydata_FS[] = {/* 36 */
   0x00,
   0x00,
   'T', 'L', 'H', 'X', ' ', ' ', ' ', ' ', /* Manufacturer : 8 bytes */
-  'O', 'p', 'e', 'n', 'i', 'C', 'E', 'L', /* Product      : 16 Bytes */
-  'i', 'n', 'k', ' ', ' ', ' ', ' ', ' ',
+  'i', 'C', 'E', 'B', 'L', 'A', 'S', 'T', /* Product      : 16 Bytes */
+  'E', 'R', ' ', ' ', ' ', ' ', ' ', ' ',
   '0', '.', '0' ,'1'                      /* Version      : 4 Bytes */
 };
 /* USER CODE END INQUIRY_DATA_FS */

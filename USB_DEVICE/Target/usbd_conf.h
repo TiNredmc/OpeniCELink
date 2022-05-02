@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2021 STMicroelectronics.
+  * Copyright (c) 2022 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -72,7 +72,7 @@
 /*---------- -----------*/
 #define USBD_SELF_POWERED     1
 /*---------- -----------*/
-#define MSC_MEDIA_PACKET     256
+#define MSC_MEDIA_PACKET     512
 
 /****************************************/
 /* #define for FS and HS identification */
