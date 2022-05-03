@@ -67,6 +67,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 
+
 PUTCHAR_PROTOTYPE
 {
   /* Place your implementation of fputc here */
@@ -190,31 +191,33 @@ int main(void)
   printf("%c",0x0c);// clear UART terminal screen
 
   // Flash init
-  if(w25_init(&w25q, &hspi1, SPI0_CS_GPIO_Port, SPI0_CS_Pin)){
+  if(w25_init(&w25q, &hspi1, SPI1_CS_GPIO_Port, SPI1_CS_Pin)){
 	  printf("ERROR:SPI flash init failed.\n");
   }else{
 	  printf("INFO:SPI flash detected\n");
-	  w25_writeMode(&w25q, 1);// NOR flash write enable.
+	  printf("INFO:Flash Size : %ld\n", w25q.flash_capa);
   }
 
-  uint8_t readbuf[32];
-  w25_read(&w25q, 32200, readbuf, 32);
-
-  printf("Readback : ");
-  for(uint8_t n = 0; n < 32; n++){
-	  printf("0x%2x \n", readbuf[n]);
-  }
+//  uint8_t readbuf;
+//
+//  printf("Readback : ");
+//  for(uint8_t n = 0; n < 20; n++){
+//	  w25_read(&w25q, n, &readbuf, 4);
+//	  printf("0x%2x\n", readbuf);
+//  }
 
   // De-initialize the SPI, we will use it later when we want to flash
   HAL_SPI_DeInit(&hspi1);
 
   HAL_GPIO_WritePin(CRESET_pin_GPIO_Port, CRESET_pin_Pin, GPIO_PIN_SET);// Release reset pin, lets FPGA run.
 
+  // Format internal Flash to FAT12 fs.
   ice_mkfs();
-  HAL_Delay(50);
-  HAL_GPIO_WritePin(USB_EN_GPIO_Port, USB_EN_Pin, GPIO_PIN_SET);
   printf("INFO:FAT12 deployed!\n");
+  HAL_Delay(50);
 
+  // Let USB enumerate.
+  HAL_GPIO_WritePin(USB_EN_GPIO_Port, USB_EN_Pin, GPIO_PIN_SET);
   printf("INFO:Starting...\n");
 
 
@@ -230,10 +233,9 @@ int main(void)
 	printf("INFO:Breathing...\n");
 
 	uint8_t *flash_scan = (uint8_t *)(FLASH_MEM_BASE_ADDR);
-	uint8_t off_found = 1;
 	//Locate the Bitstream byte on internal flash by using "pattern match" algorithm.
-	while(off_found){
-	  if(flash_scan == (uint8_t *)FLASH_MEM_END_ADDR)
+	while(1){
+	  if(flash_scan == (uint8_t *)FLASH_MEM_END_ADDR)// Out of memory bound proof.
 				flash_scan = (uint8_t *)(FLASH_MEM_BASE_ADDR);
 
 	  if(*(flash_scan++) == 0x7E){//MSB byte of preamble should be at 0x8015805.
@@ -241,7 +243,7 @@ int main(void)
 			  if(*(flash_scan++) == 0x99){
 				  if(*flash_scan == 0x7E){
 					  // found!
-					  off_found = 0;
+
 					  HAL_Delay(1000);// slow down a bit. Let's the Bitstream copied.
 					  break;
 				  }
@@ -250,6 +252,7 @@ int main(void)
 	  }
 	}
 	flash_scan -= 3;// After detected the preamble, move address back 3 byte to the beginning of the Bitstream.
+
 	printf("INFO:Bitstream found at : %p\n", flash_scan);
 	// some temporary buffer to hold bit stream address on flash.
 	uint8_t *fdata;
@@ -269,24 +272,29 @@ int main(void)
 	bitstream_size = ((uint8_t *)flash_scan - fdata) + 1;
 	printf("INFO:Bitstream size : %ld\n", bitstream_size);
 
-	// Re_init spi after last flashing?
+	// Re_init spi after last flashing
 	MX_SPI1_Init();
 	HAL_Delay(100);
 
 	// Turn LED of to indicates that we're flashing the Bitstream.
 	HAL_GPIO_WritePin(STAT_LED_GPIO_Port, STAT_LED_Pin, GPIO_PIN_RESET);
 
-	//Put FPGA in reset after we receive the bit stream from host
+	//Put FPGA in reset after we receive the Bitstream from host
 	HAL_GPIO_WritePin(CRESET_pin_GPIO_Port, CRESET_pin_Pin, GPIO_PIN_RESET);
 
 	w25_erase32K(&w25q, 0);// erase 32KByte starting at address 0
 
 	w25_write(&w25q, (uint8_t *)fdata, bitstream_size);// Flash bit stream to SPI NOR flash.
 
+	w25_writeMode(&w25q, 0);// NOR flash write disable.
+
+	w25_softreset(&w25q);
+
 	// De-init the SPI.
 	HAL_SPI_DeInit(&hspi1);
 
 	// release reset to lets FPGA run.
+	HAL_Delay(100);
 	HAL_GPIO_WritePin(CRESET_pin_GPIO_Port, CRESET_pin_Pin, GPIO_PIN_SET);
 
 	HAL_GPIO_WritePin(STAT_LED_GPIO_Port, STAT_LED_Pin, GPIO_PIN_SET);// Turn LED Back on after Bitstream was flashed.
@@ -437,17 +445,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SPI0_CS_Pin|USB_EN_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA, SPI1_CS_Pin|USB_EN_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, STAT_LED_Pin|CRESET_pin_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : SPI0_CS_Pin */
-  GPIO_InitStruct.Pin = SPI0_CS_Pin;
+  /*Configure GPIO pin : SPI1_CS_Pin */
+  GPIO_InitStruct.Pin = SPI1_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SPI0_CS_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(SPI1_CS_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : STAT_LED_Pin CRESET_pin_Pin */
   GPIO_InitStruct.Pin = STAT_LED_Pin|CRESET_pin_Pin;
