@@ -86,6 +86,9 @@ uint8_t w25_pageWrite(W25QXX *w25q, uint32_t addr,
 			(uint8_t)(addr)// page address [7 - 0]
 	};
 
+	// Write enable == 1.
+	w25_writeMode(w25q, 1);
+
 	// CE Low
 	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_RESET);
 
@@ -128,7 +131,9 @@ uint8_t w25_read(W25QXX *w25q, uint32_t addr,
 
 	return 0;
 }
-
+/* Write from the beginning of the flash
+ *
+ */
 uint8_t w25_write(W25QXX *w25q,uint8_t *data, uint32_t datsize){
 	if(datsize > w25q->flash_capa)// never write beyond the flash capacity!
 		return 1;
@@ -138,13 +143,13 @@ uint8_t w25_write(W25QXX *w25q,uint8_t *data, uint32_t datsize){
 	uint16_t last_page = 0;// store last page-aligned address for the non-aligned byte.
 
 	for(uint16_t pages = 0; pages < page_num; pages++){
-		w25_pageWrite(w25q, pages*256, data, 256);
+		w25_pageWrite(w25q, pages << 8, data, 256);
 		data += 256;// move to next 256 bytes.
 		last_page = pages;
 	}
 
 	if(page_remain)
-		w25_pageWrite(w25q, last_page + 256, data, page_remain);
+		w25_pageWrite(w25q, (last_page+1) << 8, data, page_remain);
 
 	return 0;
 }
@@ -162,6 +167,9 @@ uint8_t w25_erase4K(W25QXX *w25q, uint32_t addr){
 				(uint8_t)(addr << 8),// page address [15 - 8]
 				(uint8_t)(addr)// page address [7 - 0]
 		};
+
+	// Write enable == 1.
+	w25_writeMode(w25q, 1);
 
 	// CE Low
 	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_RESET);
@@ -189,6 +197,9 @@ uint8_t w25_erase32K(W25QXX *w25q, uint32_t addr){
 				(uint8_t)(addr)// page address [7 - 0]
 		};
 
+	// Write enable == 1.
+	w25_writeMode(w25q, 1);
+
 	// CE Low
 	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_RESET);
 
@@ -215,6 +226,9 @@ uint8_t w25_erase64K(W25QXX *w25q, uint32_t addr){
 				(uint8_t)(addr)// page address [7 - 0]
 		};
 
+	// Write enable == 1.
+	w25_writeMode(w25q, 1);
+
 	// CE Low
 	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_RESET);
 
@@ -231,6 +245,44 @@ uint8_t w25_erase64K(W25QXX *w25q, uint32_t addr){
  */
 void w25_erasewhole(W25QXX *w25q){
 	uint8_t CMD = W25_CMD_CPER;
+
+	// Write enable == 1.
+	w25_writeMode(w25q, 1);
+
+	// CE Low
+	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_RESET);
+
+	// send chip erase command.
+	HAL_SPI_Transmit(w25q->SPIbus, &CMD, 1, 100);
+
+	// CE High
+	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_SET);
+}
+
+void w25_softreset(W25QXX *w25q){
+	uint8_t CMD[2] = {0x66, 0x99};
+
+	// CE Low
+	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_RESET);
+
+	// send chip erase command.
+	HAL_SPI_Transmit(w25q->SPIbus, CMD, 1, 100);
+
+	// CE High
+	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_SET);
+
+	// CE Low
+	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_RESET);
+
+	// send chip erase command.
+	HAL_SPI_Transmit(w25q->SPIbus, CMD+1, 1, 100);
+
+	// CE High
+	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_SET);
+}
+
+void w25_sleep(W25QXX *w25q){
+	uint8_t CMD = 0xB9;
 
 	// CE Low
 	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_RESET);
