@@ -48,5 +48,6 @@ uint8_t w25_erase64K(W25QXX *w25q, uint32_t addr);
 void w25_erasewhole(W25QXX *w25q);
 void w25_softreset(W25QXX *w25q);
 void w25_sleep(W25QXX *w25q);
+void w25_wait(W25QXX *w25q);
 
 #endif /* INC_W25QXX_H_ */

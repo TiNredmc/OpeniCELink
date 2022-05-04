@@ -71,6 +71,26 @@ void w25_writeMode(W25QXX *w25q, uint8_t onoff){
 	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_SET);
 }
 
+void w25_wait(W25QXX *w25q){
+	uint8_t CMD = 0x05;
+	uint8_t stat;
+
+	// CE Low
+	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_RESET);
+
+	HAL_SPI_Transmit(w25q->SPIbus, &CMD, 1, 100);
+
+	CMD = 0x00;// DUMMY BYTE
+
+	do{
+		HAL_SPI_TransmitReceive(w25q->SPIbus, &CMD, &stat, 1, 100);
+	}while(stat & 0x01);
+
+
+	// CE High
+	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_SET);
+}
+
 /* w25_pageWrite is for writing data to NOR flash.
  * Select starting address (24 bit), buffer and the size no more than 256 bytes.
  */
@@ -81,10 +101,12 @@ uint8_t w25_pageWrite(W25QXX *w25q, uint32_t addr,
 
 	uint8_t CMD[4] = {
 			W25_CMD_PGPR, // page write command.
-			(uint8_t)(addr << 16),// page address [23 - 16]
-			(uint8_t)(addr << 8),// page address [15 - 8]
+			(uint8_t)(addr >> 16),// page address [23 - 16]
+			(uint8_t)(addr >> 8),// page address [15 - 8]
 			(uint8_t)(addr)// page address [7 - 0]
 	};
+
+	w25_wait(w25q);
 
 	// Write enable == 1.
 	w25_writeMode(w25q, 1);
@@ -98,6 +120,8 @@ uint8_t w25_pageWrite(W25QXX *w25q, uint32_t addr,
 
 	// CE High
 	HAL_GPIO_WritePin(w25q->CSBANK, w25q->CS_PIN, GPIO_PIN_SET);
+
+	w25_wait(w25q);
 
 		return 0;
 }
@@ -114,8 +138,8 @@ uint8_t w25_read(W25QXX *w25q, uint32_t addr,
 
 	uint8_t CMD[4] = {
 			W25_CMD_READ, // read command.
-			(uint8_t)(addr << 16),// page address [23 - 16]
-			(uint8_t)(addr << 8),// page address [15 - 8]
+			(uint8_t)(addr >> 16),// page address [23 - 16]
+			(uint8_t)(addr >> 8),// page address [15 - 8]
 			(uint8_t)(addr)// page address [7 - 0]
 	};
 
@@ -163,10 +187,12 @@ uint8_t w25_erase4K(W25QXX *w25q, uint32_t addr){
 
 	uint8_t CMD[4] = {
 				W25_CMD_ER_4K, // 4k sector erase command.
-				(uint8_t)(addr << 16),// page address [23 - 16]
-				(uint8_t)(addr << 8),// page address [15 - 8]
+				(uint8_t)(addr >> 16),// page address [23 - 16]
+				(uint8_t)(addr >> 8),// page address [15 - 8]
 				(uint8_t)(addr)// page address [7 - 0]
 		};
+
+	w25_wait(w25q);
 
 	// Write enable == 1.
 	w25_writeMode(w25q, 1);
@@ -192,10 +218,12 @@ uint8_t w25_erase32K(W25QXX *w25q, uint32_t addr){
 
 	uint8_t CMD[4] = {
 				W25_CMD_ER_32K, // 32K block erase command.
-				(uint8_t)(addr << 16),// page address [23 - 16]
-				(uint8_t)(addr << 8),// page address [15 - 8]
+				(uint8_t)(addr >> 16),// page address [23 - 16]
+				(uint8_t)(addr >> 8),// page address [15 - 8]
 				(uint8_t)(addr)// page address [7 - 0]
 		};
+
+	w25_wait(w25q);
 
 	// Write enable == 1.
 	w25_writeMode(w25q, 1);
@@ -221,10 +249,12 @@ uint8_t w25_erase64K(W25QXX *w25q, uint32_t addr){
 
 	uint8_t CMD[4] = {
 				W25_CMD_ER_64K, // 64K block erase command.
-				(uint8_t)(addr << 16),// page address [23 - 16]
-				(uint8_t)(addr << 8),// page address [15 - 8]
+				(uint8_t)(addr >> 16),// page address [23 - 16]
+				(uint8_t)(addr >> 8),// page address [15 - 8]
 				(uint8_t)(addr)// page address [7 - 0]
 		};
+
+	w25_wait(w25q);
 
 	// Write enable == 1.
 	w25_writeMode(w25q, 1);
@@ -245,6 +275,8 @@ uint8_t w25_erase64K(W25QXX *w25q, uint32_t addr){
  */
 void w25_erasewhole(W25QXX *w25q){
 	uint8_t CMD = W25_CMD_CPER;
+
+	w25_wait(w25q);
 
 	// Write enable == 1.
 	w25_writeMode(w25q, 1);
