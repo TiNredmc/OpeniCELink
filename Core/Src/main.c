@@ -198,12 +198,12 @@ int main(void)
 	  printf("INFO:Flash Size : %ld\n", w25q.flash_capa);
   }
 
-//  uint8_t readbuf;
+//  uint8_t readbuf[20];
 //
 //  printf("Readback : ");
+//  w25_read(&w25q, 0, readbuf, 20);
 //  for(uint8_t n = 0; n < 20; n++){
-//	  w25_read(&w25q, n, &readbuf, 4);
-//	  printf("0x%2x\n", readbuf);
+//	  printf("0x%2x\n", readbuf[n]);
 //  }
 
   // De-initialize the SPI, we will use it later when we want to flash
