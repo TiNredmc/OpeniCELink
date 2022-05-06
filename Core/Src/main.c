@@ -122,8 +122,8 @@ void ice_mkfs(){
 
 		HAL_FLASHEx_Erase(&EraseInitStruct, &PAGEError);
 
-		for(uint32_t n = FLASH_MEM_BASE_ADDR + 512; n < 0x08020000; n += 4)
-			HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, n, 0x00000000);
+//		for(uint32_t n = FLASH_MEM_BASE_ADDR + 512; n < 0x08020000; n += 4)
+//			HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, n, 0x00000000);
 
 		for(uint8_t i=0; i < 62; i+= 2){// Write Boot sector (BIOS Parameter Block) to the internal Flash.
 			HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,
@@ -131,6 +131,18 @@ void ice_mkfs(){
 		}
 
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, FLASH_MEM_BASE_ADDR + 510, 0xAA55);// Write the signature of FAT file system at the end of sector 0.
+
+		for(uint32_t n = 0; n < 1024; n += 4)
+							HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, FLASH_MEM_BASE_ADDR + 512 + n, 0x00000000);
+
+		// Set Label name at the beginning of sector 3.
+		const uint8_t ice_label[16] = {'i', 'C', 'E', 'L', 'i', 'n', 'k', 'O', 'S', 'S', ' ', 0x08, 0x00, 0x00};
+		for(uint8_t i =0; i < 16; i+= 2)
+			HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, FLASH_MEM_BASE_ADDR + 0x600 +i, (ice_label[i] | ice_label[i+1] << 8));
+
+		for(uint32_t n = FLASH_MEM_BASE_ADDR + 0x610; n < 0x08020000; n += 4)
+					HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, n, 0x00000000);
+
 
 }
 
