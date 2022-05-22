@@ -91,12 +91,12 @@ void ice_mkfs(){
 	const uint8_t ms_fat12[62] = {
 			0xEB, 0x3C, 0x90, // Jump instruction to bootstrap (x86 instruction)
 			0x4D, 0x53, 0x44, 0x4F, 0x53, 0x35, 0x2E, 0x30,// OEM name as "MSDOS5.0"
-			0x00, 0x02,// sector size -> 0x200 = 512 bytes
-			0x01,// 1 Cluster = 1 sector = 512 bytes.
-			0x01, 0x00,// 1 sector reserved (FAT12)
+			0x00, 0x04,// sector size -> 0x400 = 1024 bytes
+			0x01,// 1 Cluster = 1 sector = 1024 bytes.
+			0x02, 0x00,// 2 sector reserved (FAT12)
 			0x02,// number of FATs == 2
 			0x00, 0x02,// 32-byte directory entries in the root directory == 512 bytes
-			0x80, 0x00, // total sector of 128 sectors
+			0x40, 0x00, // total sector of 64 sectors
 			0xF8, // Non-removable disk
 			0x01, 0x00,// FAT occupied 1 sector (FAT12)
 			0x01, 0x00,// 1 sector per track
@@ -107,7 +107,7 @@ void ice_mkfs(){
 			0x00,// Reserved (For WinNT).
 			0x29,// Extended boot signature
 			0xD5, 0x80, 0x9A, 0x1C,// Volume serial number
-			0x49, 0x43, 0x45, 0x42, 0x4C, 0x41, 0x53, 0x54, 0x45, 0x52, 0x20,// Volume label "ICEBLASTER ".
+			'I','C', 'E', 'L', 'I', 'N', 'K', 'O', 'S', 'S', ' ',// Volume label "ICELINKOSS ".
 			0x46, 0x41, 0x54, 0x31, 0x32, 0x20, 0x20, 0x20// "FAT12   "
 			};
 
@@ -122,9 +122,6 @@ void ice_mkfs(){
 
 		HAL_FLASHEx_Erase(&EraseInitStruct, &PAGEError);
 
-//		for(uint32_t n = FLASH_MEM_BASE_ADDR + 512; n < 0x08020000; n += 4)
-//			HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, n, 0x00000000);
-
 		for(uint8_t i=0; i < 62; i+= 2){// Write Boot sector (BIOS Parameter Block) to the internal Flash.
 			HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD,
 					FLASH_MEM_BASE_ADDR + i, (ms_fat12[i] | ms_fat12[i+1] << 8)); // flash modified data onto Flash memory.
@@ -132,17 +129,16 @@ void ice_mkfs(){
 
 		HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, FLASH_MEM_BASE_ADDR + 510, 0xAA55);// Write the signature of FAT file system at the end of sector 0.
 
-		for(uint32_t n = 0; n < 1024; n += 4)
-							HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, FLASH_MEM_BASE_ADDR + 512 + n, 0x00000000);
+		for(uint32_t n = FLASH_MEM_BASE_ADDR + 512; n < (FLASH_MEM_BASE_ADDR + 0x1000); n += 4)
+									HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, n, 0x00000000);
 
 		// Set Label name at the beginning of sector 3.
 		const uint8_t ice_label[16] = {'i', 'C', 'E', 'L', 'i', 'n', 'k', 'O', 'S', 'S', ' ', 0x08, 0x00, 0x00};
 		for(uint8_t i =0; i < 16; i+= 2)
-			HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, FLASH_MEM_BASE_ADDR + 0x600 +i, (ice_label[i] | ice_label[i+1] << 8));
+			HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, FLASH_MEM_BASE_ADDR + 0x1000 +i, (ice_label[i] | ice_label[i+1] << 8));
 
-		for(uint32_t n = FLASH_MEM_BASE_ADDR + 0x610; n < 0x08020000; n += 4)
-					HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, n, 0x00000000);
-
+		for(uint32_t n = FLASH_MEM_BASE_ADDR + 0x1010; n < 0x08020000; n += 4)
+							HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, n, 0x00000000);
 
 }
 
