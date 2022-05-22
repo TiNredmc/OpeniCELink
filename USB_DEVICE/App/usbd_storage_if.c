@@ -72,7 +72,7 @@
 /* block size 512 bytes (STORAGE_BLK_SIZ = 0x200).
  * and block number is 128(STORAGE_BLK_NBR).
  */
-#define SMALL_FS
+// #define SMALL_FS
 // Redefine
 #undef STORAGE_BLK_NBR
 #undef STORAGE_BLK_SIZ
