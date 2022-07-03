@@ -192,8 +192,6 @@ int main(void)
   // USB_DEVICE/App/usbd_storage_if.c
   // FATFS/Target/user_diskio.c
 
-  /* On iCESugar nano board has USB bus gating controlled by PA15
-   * Set PA15 to Logic HIGH */
   HAL_GPIO_WritePin(STAT_LED_GPIO_Port, STAT_LED_Pin, GPIO_PIN_SET);
 
   printf("%c",0x0c);// clear UART terminal screen
@@ -225,6 +223,8 @@ int main(void)
   HAL_Delay(50);
 
   // Let USB enumerate.
+  /* On iCESugar nano board has USB bus gating controlled by PA15
+   * Set PA15 to Logic HIGH */
   HAL_GPIO_WritePin(USB_EN_GPIO_Port, USB_EN_Pin, GPIO_PIN_SET);
   printf("INFO:Starting...\n");
 
